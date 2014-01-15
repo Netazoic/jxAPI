@@ -1,4 +1,4 @@
-package com.netazoic.xapi;
+package com.netazoic.jxapi;
 
 public interface IF_Object {
 

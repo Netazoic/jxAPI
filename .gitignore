@@ -2,3 +2,4 @@
 .cvsignore
 .project
 .tomcatplugin
+WEB-INF/classes

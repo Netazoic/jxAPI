@@ -1,4 +1,4 @@
-package com.netazoic.xapi;
+package com.netazoic.jxapi;
 
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -42,4 +42,20 @@ public class Statement  implements IF_Object{
  public String version;
  public Attachment[] attachments;
  
+ public void createStatment(){
+	 
+ }
+ 
+ public void deleteStatement(){
+ }
+ 
+ public void updateENT(){
+	 
+ }
+ 
+ public void retrieveENT(){
+	 
+ }
 }
+ 
+ 
