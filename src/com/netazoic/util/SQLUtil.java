@@ -89,7 +89,7 @@ public class SQLUtil {
 	    Connection conn = null;
 	    try {
 	    	Properties props = new Properties();
-	    	props.setProperty(pg"user", userName);
+	    	props.setProperty("user", userName);
 	    	props.setProperty("password", password);
 	    	props.setProperty("logUnclosedConnections", "true");
 	    	props.setProperty("logLevel", jdbcLogLevel);	
