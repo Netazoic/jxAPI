@@ -1,0 +1,3 @@
+[submodule "TinCanJava"]
+	path = TinCanJava
+	url = git@github.com:Netazoic/TinCanJava.git

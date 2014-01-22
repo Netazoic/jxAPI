@@ -1,5 +1,8 @@
 package com.netazoic.jxapi;
 
-public class Agent implements IF_Actor, IF_Object{
+import com.netazoic.jxapi.iface.IF_Actor;
+import com.netazoic.jxapi.iface.IF_Object;
+
+public class Agent extends Actor implements IF_Actor, IF_Object{
 
 }

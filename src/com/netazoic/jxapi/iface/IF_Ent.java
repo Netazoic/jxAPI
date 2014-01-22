@@ -1,4 +1,4 @@
-package com.netazoic.jxapi;
+package com.netazoic.jxapi.iface;
 
 public interface IF_Ent {
 	

@@ -3,6 +3,9 @@ package com.netazoic.jxapi;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import com.netazoic.jxapi.iface.IF_Actor;
+import com.netazoic.jxapi.iface.IF_Object;
+
 /*
  * Java implementation of the Experience API (xAPI)
  * https://github.com/adlnet/xAPI-Spec
@@ -30,15 +33,16 @@ import java.util.UUID;
 public class Statement  implements IF_Object{
 
  public UUID statementID;
- public UUID id;
- public IF_Actor actor;
+ public Long actorID;
+ public Actor actor;
  public Verb verb;
- public IF_Object object; //The object of the action
+ public Long objectID; //The object of the action
+ public Object object;
  public Result result;
  public Context context;
  public Timestamp timeStamp;  //ISO8601 timestamp
  public Timestamp stored;  //ISO 8601 -- date this activity was stored in the LRS
- public Agent authority;
+ public Actor authority;
  public String version;
  public Attachment[] attachments;
  

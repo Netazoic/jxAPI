@@ -1,5 +1,8 @@
 package com.netazoic.jxapi;
 
-public class Group implements IF_Actor{
+import com.netazoic.jxapi.iface.IF_Actor;
+
+public class Group extends Actor implements IF_Actor{
+	Actor[] groupMembers;
 
 }
