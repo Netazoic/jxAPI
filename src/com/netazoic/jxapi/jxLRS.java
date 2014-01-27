@@ -4,11 +4,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.servlet.ServletConfig;
@@ -16,6 +20,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import lombok.extern.java.Log;
+
+import org.apache.commons.net.ntp.TimeStamp;
+import org.eclipse.jetty.client.HttpExchange;
+import org.joda.time.DateTime;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,32 +50,25 @@ import com.rusticisoftware.tincan.StatementsResult;
  */
 import com.rusticisoftware.tincan.TCAPIVersion;
 import com.rusticisoftware.tincan.Verb;
+import com.rusticisoftware.tincan.exceptions.FailedHTTPExchange;
+import com.rusticisoftware.tincan.exceptions.UnexpectedHTTPResponse;
+import com.rusticisoftware.tincan.http.HTTPRequest;
+import com.rusticisoftware.tincan.http.HTTPResponse;
+import com.rusticisoftware.tincan.v10x.StatementsQuery;
 
+@Log
 public class jxLRS extends ServENT implements LRS {
 
 	RemoteLRS rlrs;
 
 	public enum LRS_Param{
 		statementId, LRS_Endpoint, LRS_Username, LRS_Password, 
-		object, actor, verb
+		object, actor, verb, timeFrom, activityId, profileId
 	}
 	StatementHandler sttmntHdlr = new StatementHandler();
 	StateHandler stateHdlr = new StateHandler();
 	ActivityProfileHandler activityHdlr = new ActivityProfileHandler();
 	AgentProfileHandler agentHdlr = new AgentProfileHandler();
-
-	public static JsonNode jsonPut(HttpServletRequest req) throws JsonProcessingException, IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(req.getInputStream()));
-		StringBuilder sb = new StringBuilder();
-		String line;
-		while ((line = br.readLine()) != null) {
-			sb.append(line);
-		}
-		String data = br.readLine();
-		ObjectMapper mapper = new ObjectMapper();
-		JsonNode obj = mapper.readTree(sb.toString());
-		return obj;
-	}
 
 	public void init(ServletConfig config) throws javax.servlet.ServletException {
 		super.init(config);
@@ -84,7 +87,7 @@ public class jxLRS extends ServENT implements LRS {
 		actionMap.put(JX_Action.saveState.actionString, stateHdlr);
 		actionMap.put(JX_Action.saveStatement.actionString, sttmntHdlr);
 		try {
-			rlrs =  getLRS(ver);
+			rlrs =  getRemoteLRS(ver);
 		} catch (Exception ex) {
 			throw new ServletException(ex);
 		}
@@ -122,6 +125,13 @@ public class jxLRS extends ServENT implements LRS {
 			// no handler for the requested action
 			throw new ServletException("Invalid Request!");
 		}
+	}
+
+	private void ajaxResponse(String json, HttpServletResponse response)
+			throws IOException {
+		response.setContentType("text/xml");
+		response.setHeader("Cache-Control", "no-cache");
+		response.getWriter().write(json);
 	}
 
 	public JX_Action geNetAction(HttpServletRequest request) {
@@ -170,23 +180,12 @@ public class jxLRS extends ServENT implements LRS {
 		return action;	
 	}
 
-	private StatementTarget geObject(JsonNode js) throws Exception {
-		OBJ_Type objType = OBJ_Type.valueOf(js.get("objectType").textValue());
-		switch(objType){
-		case Activity:
-			return new Activity(js);
-
-		default:
-			throw new Exception( "Unknown object type");
-		}
-
-	}
-
 	private Agent getAgent(JsonNode js) {
 		Agent agent = Agent.fromJson(js);
 		return agent;
 	}
-	private RemoteLRS getLRS(TCAPIVersion version) throws Exception {
+
+	private RemoteLRS getRemoteLRS(TCAPIVersion version) throws Exception {
 		RemoteLRS obj = new RemoteLRS();
 		if(version == null) version = TCAPIVersion.V100;
 		obj.setEndpoint(getSetting(LRS_Param.LRS_Endpoint.name()));
@@ -218,8 +217,26 @@ public class jxLRS extends ServENT implements LRS {
 
 		return verb;
 	}
+	private StatementTarget getXObject(JsonNode js) throws Exception {
+		OBJ_Type objType = OBJ_Type.valueOf(js.get("objectType").textValue());
+		switch(objType){
+		case Activity:
+			return new Activity(js);
+
+		default:
+			throw new Exception( "Unknown object type");
+		}
+
+	}
+
 	private Activity mockActivity(String suffix) throws URISyntaxException {
 		return new Activity("http://tincanapi.com/TinCanJava/Test/RemoteLRSTest_mockActivity/" + suffix);
+	}
+	private Agent mockAgent() {
+		Agent obj = new Agent();
+		obj.setMbox("mailto:tincanjava-test-tincan@tincanapi.com");
+
+		return obj;
 	}
 	private Verb mockVerb() throws URISyntaxException {
 		return new Verb("http://adlnet.gov/expapi/verbs/attempted");
@@ -234,22 +251,68 @@ public class jxLRS extends ServENT implements LRS {
 
 		return obj;
 	}
+
 	@Override
 	public StatementsResult moreStatements(String moreURL) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return rlrs.moreStatements(moreURL);
 	}
+
+	public static JsonNode putToJSON(HttpServletRequest req) throws JsonProcessingException, IOException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(req.getInputStream()));
+		StringBuilder sb = new StringBuilder();
+		String line;
+		while ((line = br.readLine()) != null) {
+			sb.append(line);
+		}
+		String data = br.readLine();
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode obj = mapper.readTree(sb.toString());
+		return obj;
+	}
+
 	@Override
 	public StatementsResult queryStatements(StatementsQueryInterface query)
 			throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return rlrs.queryStatements(query);
 	}
+
+	public String retrieveActivityProfile(String activityID, String profileID, TimeStamp since) throws Exception {
+		HashMap<String,String> params = new HashMap<String,String>();
+		params.put(LRS_Param.profileId.name(), profileID);
+		params.put(LRS_Param.activityId.name(), activityID);
+		if(since != null) params.put("since", since.toDateString());
+
+		String queryString = "?";
+		Boolean first = true;
+		for(Map.Entry<String,String> parameter : params.entrySet()) {
+			queryString += (first ? "" : "&") + URLEncoder.encode(parameter.getKey(), "UTF-8") + "=" + URLEncoder.encode(parameter.getValue(), "UTF-8").replace("+", "%20");
+			first = false;
+		}
+		String apiString;
+		if(profileID == null) apiString = "activities";
+		else apiString = "activities/profile";
+
+		HTTPRequest request = new HTTPRequest();
+		URL endPoint = rlrs.getEndpoint();
+		request.setURL(endPoint + apiString + queryString);
+
+		HTTPResponse response = rlrs.sendRequest(request);
+		int status = response.getStatus();
+
+		if (status == 200) {
+			return response.getContent();
+		}
+		else if (status == 404) {
+			return null;
+		}
+		throw new UnexpectedHTTPResponse(response);
+	}
+
 	@Override
 	public State retrieveState(String id, String activityId, Agent agent,
 			UUID registration) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		State st = rlrs.retrieveState(id, activityId, agent, registration);
+		return st;
 	}
 	@Override
 	public Statement retrieveStatement(String id) throws Exception {
@@ -258,13 +321,11 @@ public class jxLRS extends ServENT implements LRS {
 
 	@Override
 	public Statement retrieveVoidedStatement(String id) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return rlrs.retrieveVoidedStatement(id);
 	}
 
 	@Override
 	public UUID saveStatement(Statement statement) throws Exception {
-		// TODO Auto-generated method stub
 		rlrs.saveStatement(statement);
 		return statement.getId();
 	}
@@ -272,17 +333,15 @@ public class jxLRS extends ServENT implements LRS {
 	@Override
 	public List<String> saveStatements(List<Statement> statements)
 			throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		return rlrs.saveStatements(statements);
 	}
 
 	@Override
 	public void saveState(State state, String activityId, Agent agent,
 			UUID registration) throws Exception {
-		// TODO Auto-generated method stub
+		rlrs.saveState(state, activityId, agent, registration);
 
 	}
-
 
 	public class StatementHandler extends ActionEO implements NetAction {
 
@@ -291,17 +350,17 @@ public class jxLRS extends ServENT implements LRS {
 			JX_Action jxAction = JX_Action.valueOf(actionString);
 			switch(jxAction){
 			case queryStatements:
-				queryStatementsHdlr(request);
+				queryStatementsHdlr(request,response);
 				break;
 			case rstat:
 			case retrieveStatement:
 				retrieveStatementHdlr(request,response);
 				break;
 			case retrieveVoided:
-				retrieveVoidedHdlr(request);
+				retrieveVoidedHdlr(request,response);
 				break;
 			case saveStatement:
-				saveStatementHdlr(request);
+				saveStatementHdlr(request,response);
 				break;
 			default:
 				throw new Exception("Unexpected action");
@@ -310,44 +369,52 @@ public class jxLRS extends ServENT implements LRS {
 		}
 
 
-		private void queryStatementsHdlr(HttpServletRequest request) {
-			// TODO Auto-generated method stub
-
+		private void queryStatementsHdlr(HttpServletRequest request, HttpServletResponse response) throws Exception {
+			StatementsQuery query = new StatementsQuery();
+			//TODO finish this 
+			String timeFrom = (String) request.getAttribute(LRS_Param.timeFrom.name());
+			query.setSince(new DateTime(timeFrom));
+			//query.setSince(new DateTime("2013-03-13T14:17:42.610Z"));
+			//query.setLimit(3);
+			query.setAgent(mockAgent());
+			query.setActivityID(mockActivity("testSaveStatement").getId());
+			StatementsResult result = rlrs.queryStatements(query);
+			log.info(result.toJSON(true));
 		}
 
 		private void retrieveStatementHdlr(HttpServletRequest request, HttpServletResponse response)
-					throws JsonProcessingException, IOException, URISyntaxException, Exception {
+				throws JsonProcessingException, IOException, URISyntaxException, Exception {
 			String statementID = (String)request.getAttribute(LRS_Param.statementId.name());
 			//TODO: Check id to make sure it is a valid UUID;
 			Statement stat = retrieveStatement(statementID);
-			response.setContentType("text/xml");
-			response.setHeader("Cache-Control", "no-cache");
-			response.getWriter().write(stat.toJSON());
+			ajaxResponse(stat.toJSON(), response);
 		}
 
-		private void retrieveVoidedHdlr(HttpServletRequest request) {
-			// TODO Auto-generated method stub
-
+		private void retrieveVoidedHdlr(HttpServletRequest request, HttpServletResponse response) throws Exception {
+			String statementID = (String) request.getAttribute(LRS_Param.statementId.name());
+			Statement st = retrieveStatement(statementID);
+			ajaxResponse(st.toJSON(),response);
 		}
 
 
-		private void saveStatementHdlr(HttpServletRequest request) throws Exception {
+		private void saveStatementHdlr(HttpServletRequest request, HttpServletResponse response) throws Exception {
 			Statement st = statementFromRequest(request);
 			st.stamp(); // triggers a PUT
 			saveStatement(st);
+			ajaxResponse("{'good':'job'}",response);
 		}
-		
+
 		private Statement statementFromRequest(HttpServletRequest request)
 				throws JsonProcessingException, IOException,
 				URISyntaxException, Exception {
 			String statementID = (String)request.getAttribute(LRS_Param.statementId.name());
 			//TODO: Check id to make sure it is a valid UUID;
-			JsonNode jsPut = jsonPut(request);
+			JsonNode jsPut = putToJSON(request);
 			Statement st = new Statement(jsPut);
 			JsonNode object = jsPut.get(LRS_Param.object.name());
 			st.setActor(getAgent(jsPut.get(LRS_Param.actor.name())));
 			st.setVerb(getVerb(jsPut.get(LRS_Param.verb.name())));
-			st.setObject(geObject(object));
+			st.setObject(getXObject(object));
 			return st;
 		}
 
@@ -361,13 +428,13 @@ public class jxLRS extends ServENT implements LRS {
 			JX_Action jxAction = JX_Action.valueOf(actionString);
 			switch(jxAction){
 			case retrieveState:
-				retrieveStateHdlr(request);
+				retrieveStateHdlr(request,response);
 				break;
 			case saveState:
-				saveStateHdlr(request);
+				saveStateHdlr(request,response);
 				break;
 			case state:
-				saveStateHdlr(request);
+				saveStateHdlr(request,response);
 				break;
 			default:
 				throw new Exception("Unexpected action");
@@ -377,14 +444,14 @@ public class jxLRS extends ServENT implements LRS {
 
 
 
-		private void retrieveStateHdlr(HttpServletRequest request) {
+		private void retrieveStateHdlr(HttpServletRequest request, HttpServletResponse response) {
 			// TODO Auto-generated method stub
 
 		}
 
 
 
-		private void saveStateHdlr(HttpServletRequest request) {
+		private void saveStateHdlr(HttpServletRequest request, HttpServletResponse response) {
 			// TODO Auto-generated method stub
 
 		}
@@ -399,24 +466,39 @@ public class jxLRS extends ServENT implements LRS {
 			switch(jxAction){
 
 			case retrieveActivityProfile:
-				retrieveActivityProfileHdlr(request);
+				retrieveActivityProfileHdlr(request,response);
 				break;
 			case saveActivityProfile:
-				saveActivityProfileHdlr(request);
+				saveActivityProfileHdlr(request,response);
 				break;
 			default:
 				throw new Exception("Unexpected action");
 			}
 		}
+		private Activity activityFromRequest(HttpServletRequest request)
+				throws JsonProcessingException, IOException,
+				URISyntaxException, Exception {
+			String activityID = (String)request.getAttribute(LRS_Param.activityId.name());
+			Activity act = new Activity(activityID);
+			return act;
+		}
 
 
-		private void saveActivityProfileHdlr(HttpServletRequest request) {
+
+		private void saveActivityProfileHdlr(HttpServletRequest request, HttpServletResponse response) {
 			// TODO Auto-generated method stub
 
 		}
 
-		private void retrieveActivityProfileHdlr(HttpServletRequest request) {
-			// TODO Auto-generated method stub
+		private void retrieveActivityProfileHdlr(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException, Exception {
+			Activity act = activityFromRequest(request);
+			String profileID = (String)request.getAttribute(LRS_Param.profileId.name());
+			String id = act.getId().toString();
+			UUID registration = null;  //TODO fixme
+			Agent agent = mockAgent(); //TODO fixme
+			String profileContent = retrieveActivityProfile(id,profileID,null);
+			if(profileContent == null) profileContent = "no content";
+			ajaxResponse(profileContent,response);
 
 		}
 	}
@@ -429,23 +511,41 @@ public class jxLRS extends ServENT implements LRS {
 			JX_Action jxAction = JX_Action.valueOf(actionString);
 			switch(jxAction){
 			case retrieveAgentProfile:
-				retrieveAgentProfileHdlr(request);
+				retrieveAgentProfileHdlr(request,response);
 				break;
 			case saveAgentProfile:
-				saveAgentProfileHdlr(request);
+				saveAgentProfileHdlr(request,response);
 				break;
 			default:
 				throw new Exception("Unexpected action");
 			}
 		}
 
-		private void saveAgentProfileHdlr(HttpServletRequest request) {
-			// TODO Auto-generated method stub
+		private Agent agentFromRequest(HttpServletRequest request)
+				throws JsonProcessingException, IOException,
+				URISyntaxException, Exception {
+			String statementID = (String)request.getAttribute(LRS_Param.statementId.name());
+			//TODO: Check id to make sure it is a valid UUID;
+			JsonNode jsPut = putToJSON(request);
+			Statement st = new Statement(jsPut);
+			Agent agent = new Agent();
+			JsonNode object = jsPut.get(LRS_Param.object.name());
+			st.setActor(getAgent(jsPut.get(LRS_Param.actor.name())));
+			st.setVerb(getVerb(jsPut.get(LRS_Param.verb.name())));
+			st.setObject(getXObject(object));
+			return agent;
+		}
+
+		private void saveAgentProfileHdlr(HttpServletRequest request, HttpServletResponse response) throws JsonProcessingException, IOException, URISyntaxException, Exception {
+			//TODO finish me
+			Agent agent = agentFromRequest(request);
 
 		}
 
-		private void retrieveAgentProfileHdlr(HttpServletRequest request) {
+		private void retrieveAgentProfileHdlr(HttpServletRequest request, HttpServletResponse response) throws JsonProcessingException, IOException, URISyntaxException, Exception {
 			// TODO Auto-generated method stub
+			Agent agent = agentFromRequest(request);
+
 
 		}
 

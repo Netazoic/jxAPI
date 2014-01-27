@@ -20,7 +20,7 @@ public Activity(JsonNode js) throws URISyntaxException {
 public Activity(String string) throws URISyntaxException {
 	super(string);
 }
-Long activityID;
+String activityID;
 URL actvIRI;
 String actvName;
 String actvDesc;
