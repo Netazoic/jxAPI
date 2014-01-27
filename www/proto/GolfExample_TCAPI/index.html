@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Course Launch Page</title>
+    <script src="scripts/TinCanJS/build/tincan-min.js" type="text/javascript"></script>
+    <script src="scripts/common.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        //TinCan.enableDebug();
+
+        //
+        // content definition
+        //
+        var pageArray = [
+                "Playing/Playing.html",
+                "Playing/Par.html",
+                "Playing/Scoring.html",
+                "Playing/OtherScoring.html",
+                "Playing/RulesOfGolf.html",
+                "Etiquette/Course.html",
+                "Etiquette/Distracting.html",
+                "Etiquette/Play.html",
+                "Handicapping/Overview.html",
+                "Handicapping/CalculatingHandicap.html",
+                "Handicapping/CalculatingScore.html",
+                "Handicapping/Example.html",
+                "HavingFun/HowToHaveFun.html",
+                "HavingFun/MakeFriends.html",
+                "HavingFun/HowToBeStylish.html",
+                "assessmenttemplate.html?questions=Playing&questions=Etiquette&questions=Handicapping&questions=HavingFun"
+            ],
+            currentPage = 0,
+            startTimeStamp = null,
+            processedUnload = false,
+            reachedEnd = false,
+            maxPageReached = 0,
+            tincan = new TinCan (
+                {
+                    url: window.location.href,
+                    activity: GolfExample.CourseActivity
+                }
+            );
+
+        tincan.sendStatement(
+            {
+                verb: "attempted",
+                context: GolfExample.getContext()
+            }
+        );
+
+        //
+        // functions for sizing the iFrame
+        //
+        function setIframeHeight(id, navWidth) {
+            if ( document.getElementById ) {
+                var theIframe = document.getElementById(id);
+                if (theIframe) {
+                    var height = getWindowHeight();
+                    theIframe.style.height = Math.round( height ) - navWidth + "px";
+                    theIframe.style.marginTop = Math.round( ((height - navWidth) - parseInt(theIframe.style.height) )/2 ) + "px";
+                }
+            }
+        }
+
+        function getWindowHeight() {
+            var height = 0;
+            if (window.innerHeight){
+                height = window.innerHeight - 18;
+            }
+            else if (document.documentElement && document.documentElement.clientHeight){
+                height = document.documentElement.clientHeight;
+            }
+            else if (document.body && document.body.clientHeight) {
+                height = document.body.clientHeight;
+            }
+            return height;
+        }
+
+        function SetupIFrame(){
+            //set our iFrame for the content to take up the full screen except for our navigation
+            var navWidth = 80;
+            setIframeHeight("contentFrame", navWidth);
+            window.onresize = function() { setIframeHeight("contentFrame", navWidth); }
+        }
+
+        //
+        // navigation functions
+        //
+        function doStart(){
+            //get the iFrame sized correctly and set up
+            SetupIFrame();
+
+            //get activity_id bookmark if it exists
+            var stateResult = tincan.getState("location");
+            if (stateResult.err === null && stateResult.state !== null && stateResult.state.contents !== "") {
+                if (confirm("Would you like to resume from where you previously left off? ")) {
+                    currentPage = parseInt(stateResult.state.contents, 10);
+                }
+            }
+            else {
+                // if there isn't a stored bookmark, start the user at the first page
+                currentPage = 0;
+            }
+
+            goToPage();
+        }
+
+        function goToPage(){
+            var theIframe = document.getElementById("contentFrame"),
+                prevButton = document.getElementById("butPrevious"),
+                nextButton = document.getElementById("butNext");
+
+            //pass the TC arguments to the iframe
+            var tc_argStr = (pageArray[currentPage].indexOf("?") != -1) ? "&" + location.search.slice(1) : location.search;
+
+            //navigate the iFrame to the content
+            theIframe.src = pageArray[currentPage] + tc_argStr;
+
+            //disable the prev/next buttons if we are on the first or last page.
+            if (currentPage === 0){
+                nextButton.disabled = false;
+                prevButton.disabled = true;
+            }
+            else if (currentPage === (pageArray.length - 1)){
+                nextButton.disabled = true;
+                prevButton.disabled = false;
+            }
+            else{
+                nextButton.disabled = false;
+                prevButton.disabled = false;
+            }
+
+            // save the current location as the bookmark
+            tincan.setState("location", currentPage, function () {});
+        }
+
+        function doFinish(){
+        }
+
+        function doPrevious(){
+            if (currentPage > 0){
+                currentPage--;
+            }
+            goToPage();
+        }
+
+        function doNext(){
+            if (currentPage < (pageArray.length - 1)){
+                currentPage++;
+            }
+            goToPage();
+        }
+
+        //called from the assessmenttemplate.html page to record the results of a test
+        //passes in score as a percentage
+        function GetRecordTestStatement(score, activityId){
+            // send score
+            var scaledScore = score / 100,
+                success = (scaledScore >= 0.8);
+
+            var stmt = {
+                verb: "http://adlnet.gov/expapi/verbs/completed",
+                object: {
+                    id: activityId
+                },
+                result: {
+                    score: {
+                        scaled: scaledScore,
+                        raw: score,
+                        min: 0,
+                        max: 100
+                    },
+                    success: success
+                },
+                context: GolfExample.getContext(GolfExample.CourseActivity.id)
+            };
+
+            return stmt;
+        }
+
+        //called from the assessmenttemplate.html page to record the results of a question
+        function GetQuestionAnswerStatement(id, questionText, questionChoices, questionType, learnerResponse, correctAnswer, wasCorrect, activityId){
+            if (typeof console !== 'undefined') {
+                console.log("GetQuestionAnswerStatement");
+            }
+
+            //send question info
+            var qObj = {
+                id: id,
+                definition: {
+                    type: "http://adlnet.gov/expapi/activities/cmi.interaction",
+                    description: {
+                        "en-US": questionText
+                    },
+                    interactionType: questionType,
+                    correctResponsesPattern: [
+                        String(correctAnswer)
+                    ]
+                }
+            };
+
+            if(questionChoices !== null && questionChoices.length > 0){
+                var choices = [];
+                for(var i = 0; i < questionChoices.length; i++){
+                    var choice = questionChoices[i];
+                    choices.push(
+                        {
+                            id: choice,
+                            description: {
+                                "en-US": choice
+                            }
+                        }
+                    );
+                }
+                if (typeof console !== 'undefined') {
+                    console.log(qObj);
+                }
+                qObj.definition.choices = choices;
+            }
+
+            return {
+                verb: "http://adlnet.gov/expapi/verbs/answered",
+                object: qObj,
+                result: {
+                    response: learnerResponse,
+                    success: wasCorrect
+                },
+                context: GolfExample.getContext(activityId)
+            }
+        }
+
+        function FormatChoiceResponse(value){
+            var newValue = new String(value);
+
+            //replace all whitespace
+            newValue = newValue.replace(/\W/g, "_");
+
+            return newValue;
+        }
+    </script>
+</head>
+
+<body onload="doStart(false);">
+
+<div style="text-align: center; width: 100%; margin: 10px;"><a style="" href="http://scorm.com/tincan">TinCan Home</a></div>
+
+<iframe width="100%" id="contentFrame" src=""></iframe>
+
+<div id="navDiv">
+    <input type="button" value="<- Previous" id="butPrevious" onclick="doPrevious();"/>
+    <input type="button" value="Next ->" id="butNext" onclick="doNext();"/>
+</div>
+
+<script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-26545776-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+</script>
+
+</body>
+</html>

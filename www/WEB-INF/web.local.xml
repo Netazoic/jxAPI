@@ -1,0 +1,42 @@
+	<!-- LRS Endpoint params -->
+	<context-param>
+		<param-name>LRS_Endpoint</param-name>
+		<param-value>https://cloud.scorm.com/tc/B0Q4VVOY1O/</param-value>
+	</context-param>
+	<context-param>
+		<param-name>LRS_Username</param-name>
+		<param-value>jomofrodo@gmail.com</param-value>
+	</context-param>
+	<context-param>
+		<param-name>LRS_Password</param-name>
+		<param-value>dogs2bark</param-value>
+	</context-param> 
+	<!--   Local Endpoint
+	<context-param>
+		<param-name>LRS_Endpoint</param-name>
+		<param-value>http://jxapid</param-value>
+	</context-param>
+	<context-param>
+		<param-name>LRS_Username</param-name>
+		<param-value>jomofrodo</param-value>
+	</context-param>
+	<context-param>
+		<param-name>LRS_Password</param-name>
+		<param-value>foo</param-value>
+	</context-param> 
+	-->
+	
+		<!--   Scorm Cloud Endpoint
+	<context-param>
+		<param-name>LRS_Endpoint</param-name>
+		<param-value>https://cloud.scorm.com/tc/B0Q4VVOY1O/</param-value>
+	</context-param>
+	<context-param>
+		<param-name>LRS_Username</param-name>
+		<param-value>jomofrodo@gmail.com</param-value>
+	</context-param>
+	<context-param>
+		<param-name>LRS_Password</param-name>
+		<param-value>dogs2bark</param-value>
+	</context-param> 
+	-->

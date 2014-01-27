@@ -1,0 +1,469 @@
+
+<context-param>
+	<param-name>STD_CTPLibraryPath</param-name>
+	<param-value>CTP-Library/common</param-value>
+</context-param>
+<context-param>
+	<param-name>ReportLocation</param-name>
+	<param-value>WEB-INF/reports</param-value>
+</context-param>
+<context-param>
+	<param-name>ExternalSessionHandler</param-name>
+	<param-value>com.claresco.efast.EFSessionHandler</param-value>
+</context-param>
+<context-param>
+	<param-name>Initializer</param-name>
+	<param-value>com.claresco.efast.EFInitializer</param-value>
+</context-param>
+
+<!-- 
+<context-param>
+    <param-name>APP_ButtonCTP</param-name>
+    <param-value>/include/buttonDojoStyle.ctp</param-value>
+</context-param>
+-->
+
+<!-- eFast SERVLETS -->
+<context-param>
+	<param-name>ModuleNameECHAN</param-name>
+	<param-value>eChannels</param-value>
+</context-param>
+
+<servlet>
+	<servlet-name>eChannels</servlet-name>
+	<servlet-class>com.claresco.efast.eChannels</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet-mapping>
+	<servlet-name>eChannels</servlet-name>
+	<url-pattern>/echan</url-pattern>
+</servlet-mapping>
+
+<servlet>
+	<servlet-name>EFUtil</servlet-name>
+	<servlet-class>com.claresco.efast.EFUtil</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>ProgramMgr</servlet-name>
+	<servlet-class>com.claresco.efast.ProgramMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>PropertyMgr</servlet-name>
+	<servlet-class>com.claresco.efast.PropertyMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>EFTaskAdminServlet</servlet-name>
+	<servlet-class>
+		com.claresco.efast.EFTaskAdminServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+<servlet>
+	<servlet-name>UploadServlet</servlet-name>
+	<servlet-class>com.claresco.efast.UploadServlet</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>QuestionDefaultUploadServlet</servlet-name>
+	<servlet-class>com.claresco.efast.QuestionDefaultUploadServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+<!-- HWS Servlet -->
+<context-param>
+	<param-name>ModuleNameHWS</param-name>
+	<param-value>eFast HWS</param-value>
+</context-param>
+<servlet>
+	<servlet-name>HWS</servlet-name>
+	<servlet-class>com.claresco.efast.hws.HWS</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet-mapping>
+	<servlet-name>HWS</servlet-name>
+	<url-pattern>/hwsm</url-pattern>
+</servlet-mapping>
+
+
+<!-- DWP Servlet -->
+<servlet>
+	<servlet-name>DWP</servlet-name>
+	<servlet-class>com.claresco.efast.dwp.DWP</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet-mapping>
+	<servlet-name>DWP</servlet-name>
+	<url-pattern>/dwp</url-pattern>
+</servlet-mapping>
+
+
+
+<!-- News Servlet -->
+<context-param>
+	<param-name>ModuleNameNEWS</param-name>
+	<param-value>eFast News</param-value>
+</context-param>
+
+<servlet>
+	<servlet-name>ResourceMgr</servlet-name>
+	<servlet-class>com.claresco.standardservlets.ResourceMgr
+	</servlet-class>
+</servlet>
+<servlet-mapping>
+	<servlet-name>ResourceMgr</servlet-name>
+	<url-pattern>/resourcemgr</url-pattern>
+</servlet-mapping>
+
+<!-- Leaving the ImgStoreFTPServer unspecified will disable the FTPing of 
+	resources to an FTP server -->
+<context-param> <param-name>ImgStoreFTPServer</param-name> 
+	<param-value>aaryn.lunarpages.com</param-value> 
+</context-param>
+<context-param>
+	<param-name>ImgStoreFTPDirectory</param-name>
+	<param-value>/www/</param-value>
+</context-param>
+<context-param>
+	<param-name>ImgStoreBaseURL</param-name>
+	<param-value>https://www.clarescoimages.com/</param-value>
+</context-param>
+<context-param>
+	<param-name>ImgStoreFTPUsername</param-name>
+	<param-value>clares2</param-value>
+</context-param>
+<context-param>
+	<param-name>ImgStoreFTPPassword</param-name>
+	<param-value>Iwnu2007aap!</param-value>
+</context-param>
+<!-- <context-param> <param-name>IMGResourceDirectory</param-name> <param-value>/resources</param-value> 
+	</context-param> <context-param> <param-name>IMGResourceDirectoryURL</param-name> 
+	<param-value>/resources</param-value> </context-param> -->
+
+<!-- QuickGroup Servlet -->
+<servlet>
+	<servlet-name>QG</servlet-name>
+	<servlet-class>com.claresco.efast.qg.QG</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet-mapping>
+	<servlet-name>QG</servlet-name>
+	<url-pattern>/qg</url-pattern>
+</servlet-mapping>
+<!-- //QuickGroup -->
+
+
+
+
+<!-- FST Entries -->
+<servlet>
+	<servlet-name>ATStatusMgr</servlet-name>
+	<servlet-class>com.claresco.efast.ATStatusMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+<servlet>
+	<servlet-name>FormMgr</servlet-name>
+	<servlet-class>com.claresco.fst.FormMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>FormHdlr</servlet-name>
+	<servlet-class>com.claresco.fst.FormHdlr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>FSTAdminServlet</servlet-name>
+	<servlet-class>com.claresco.fst.FSTAdminServlet</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>FSTResourceServlet</servlet-name>
+	<servlet-class>com.claresco.fst.FSTResourceServlet</servlet-class>
+</servlet>
+<servlet>
+	<servlet-name>LogMgr</servlet-name>
+	<servlet-class>com.claresco.fst.LogMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>MessageMgr</servlet-name>
+	<servlet-class>com.claresco.fst.MessageMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>PersonMgr</servlet-name>
+	<servlet-class>com.claresco.fst.PersonMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet-mapping>
+	<servlet-name>PersonMgr</servlet-name>
+	<url-pattern>/personmgr</url-pattern>
+</servlet-mapping>
+<servlet>
+	<servlet-name>QuestionDefaultMgr</servlet-name>
+	<servlet-class>com.claresco.efast.QuestionDefaultMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+
+<servlet-mapping>
+	<servlet-name>FormMgr</servlet-name>
+	<url-pattern>/form</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>MessageMgr</servlet-name>
+	<url-pattern>/msgs</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>ATStatusMgr</servlet-name>
+	<url-pattern>/status</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>FSTResourceServlet</servlet-name>
+	<url-pattern>/fstresource</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>QuestionDefaultMgr</servlet-name>
+	<url-pattern>/qdefaults</url-pattern>
+</servlet-mapping>
+
+
+
+<!-- STOCK ENTRIES BELOW THIS LINE -->
+<servlet>
+	<servlet-name>AccountCreationServlet</servlet-name>
+	<servlet-class>com.claresco.efast.AccountCreationServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+<servlet>
+	<servlet-name>ReportMgr</servlet-name>
+	<servlet-class>com.claresco.efast.EFReportMgr</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>FileServlet</servlet-name>
+	<servlet-class>com.claresco.standardservlets.FileServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+<servlet>
+	<servlet-name>HomeServlet</servlet-name>
+	<servlet-class>com.claresco.efast.HomeServlet</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>StaticFileServlet</servlet-name>
+	<servlet-class>com.claresco.fst.FSTStaticFileServlet</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>TaskAdminServlet</servlet-name>
+	<servlet-class>
+		com.claresco.standardservlets.TaskAdminServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>ReportAdminServlet</servlet-name>
+	<servlet-class>
+		com.claresco.standardservlets.ReportAdminServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>SiteAdminServlet</servlet-name>
+	<servlet-class>
+		com.claresco.standardservlets.SiteAdminServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>WebTestRunner</servlet-name>
+	<servlet-class>
+		com.claresco.util.WebTestRunner
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>UserAdminServlet</servlet-name>
+	<servlet-class>
+		com.claresco.efast.UserAdminServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+<servlet>
+	<servlet-name>AccessAdminServlet</servlet-name>
+	<servlet-class>
+		com.claresco.standardservlets.AccessAdminServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+<servlet>
+	<servlet-name>Decimator</servlet-name>
+	<servlet-class>com.claresco.fst.Decimator</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+<servlet>
+	<servlet-name>MSSOServlet</servlet-name>
+	<servlet-class>com.claresco.standardservlets.MSSOServlet
+	</servlet-class>
+	<load-on-startup>0</load-on-startup>
+</servlet>
+
+
+<servlet-mapping>
+	<servlet-name>FSTAdminServlet</servlet-name>
+	<url-pattern>/admin</url-pattern>
+</servlet-mapping>
+
+<servlet-mapping>
+	<servlet-name>MSSOServlet</servlet-name>
+	<url-pattern>/msso</url-pattern>
+</servlet-mapping>
+
+<servlet-mapping>
+	<servlet-name>Decimator</servlet-name>
+	<url-pattern>/decimator</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>FileServlet</servlet-name>
+	<url-pattern>/file</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>HomeServlet</servlet-name>
+	<url-pattern>/home</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>UserAdminServlet</servlet-name>
+	<url-pattern>/useradmin</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>AccountCreationServlet</servlet-name>
+	<url-pattern>/signup</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>ProgramMgr</servlet-name>
+	<url-pattern>/program</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>PropertyMgr</servlet-name>
+	<url-pattern>/property</url-pattern>
+</servlet-mapping>
+
+<servlet-mapping>
+	<servlet-name>ReportMgr</servlet-name>
+	<url-pattern>/report</url-pattern>
+</servlet-mapping>
+
+<servlet-mapping>
+    <servlet-name>ReportAdminServlet</servlet-name>
+    <url-pattern>/reportlist</url-pattern>
+</servlet-mapping>
+
+<servlet-mapping>
+	<servlet-name>LogMgr</servlet-name>
+	<url-pattern>/log</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>SiteAdminServlet</servlet-name>
+	<url-pattern>/siteadmin</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>WebTestRunner</servlet-name>
+	<url-pattern>/wtr</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>EFTaskAdminServlet</servlet-name>
+	<url-pattern>/taskadmin</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>UploadServlet</servlet-name>
+	<url-pattern>/upload</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>QuestionDefaultUploadServlet</servlet-name>
+	<url-pattern>/uploadqd</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>EFUtil</servlet-name>
+	<url-pattern>/util</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>EFUtil</servlet-name>
+	<url-pattern>/efast</url-pattern>
+</servlet-mapping>
+
+<servlet-mapping>
+	<servlet-name>StaticFileServlet</servlet-name>
+	<url-pattern>*.htmls</url-pattern>
+</servlet-mapping>
+<servlet-mapping>
+	<servlet-name>StaticFileServlet</servlet-name>
+	<url-pattern>*.shtml</url-pattern>
+</servlet-mapping>
+
+
+<!-- For Tomcat 7 -->
+<servlet-mapping>
+	<servlet-name>AccessAdminServlet</servlet-name>
+	<url-pattern>/servlet/AccessAdminServlet</url-pattern>
+</servlet-mapping>
+
+<servlet-mapping>
+	<servlet-name>AccountCreationServlet</servlet-name>
+	<url-pattern>/servlet/AccountCreationServlet</url-pattern>
+</servlet-mapping>
+
+<servlet-mapping>
+	<servlet-name>UserAdminServlet</servlet-name>
+	<url-pattern>/servlet/UserAdminServlet</url-pattern>
+</servlet-mapping>
+
+<welcome-file-list>
+	<welcome-file>index.html</welcome-file>
+</welcome-file-list>
+
+<!-- ========================================================== -->
+<!-- Filters -->
+<!-- ========================================================== -->
+
+<!-- Filter to set character encoding on each request to UTF-8 -->
+<filter>
+	<filter-name>Set Character Encoding</filter-name>
+	<filter-class>filters.SetCharacterEncodingFilter</filter-class>
+	<init-param>
+		<param-name>encoding</param-name>
+		<param-value>UTF-8</param-value>
+	</init-param>
+	<init-param>
+		<param-name>ignore</param-name>
+		<param-value>false</param-value>
+	</init-param>
+</filter>
+<filter-mapping>
+	<filter-name>Set Character Encoding</filter-name>
+	<url-pattern>/*</url-pattern>
+</filter-mapping>
+
+
+<!-- ========================================================== -->
+<!-- Mime Types -->
+<!-- ========================================================== -->
+<mime-mapping>
+	<extension>xls</extension>
+	<mime-type>application/msexcel</mime-type>
+</mime-mapping>
+<mime-mapping>
+	<extension>json</extension>
+	<mime-type>text/plain</mime-type>
+</mime-mapping>
