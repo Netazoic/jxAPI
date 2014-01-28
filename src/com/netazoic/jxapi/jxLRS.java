@@ -3,6 +3,7 @@ package com.netazoic.jxapi;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -24,7 +25,8 @@ import javax.servlet.http.HttpSession;
 import lombok.extern.java.Log;
 
 import org.apache.commons.net.ntp.TimeStamp;
-import org.eclipse.jetty.client.HttpExchange;
+import org.eclipse.jetty.http.HttpMethods;
+import org.eclipse.jetty.io.ByteArrayBuffer;
 import org.joda.time.DateTime;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -50,7 +52,6 @@ import com.rusticisoftware.tincan.StatementsResult;
  */
 import com.rusticisoftware.tincan.TCAPIVersion;
 import com.rusticisoftware.tincan.Verb;
-import com.rusticisoftware.tincan.exceptions.FailedHTTPExchange;
 import com.rusticisoftware.tincan.exceptions.UnexpectedHTTPResponse;
 import com.rusticisoftware.tincan.http.HTTPRequest;
 import com.rusticisoftware.tincan.http.HTTPResponse;
@@ -276,10 +277,10 @@ public class jxLRS extends ServENT implements LRS {
 		return rlrs.queryStatements(query);
 	}
 
-	public String retrieveActivityProfile(String activityID, String profileID, TimeStamp since) throws Exception {
+	public HTTPResponse retrieveActivityProfile(String activityID, String profileID, TimeStamp since) throws Exception {
 		HashMap<String,String> params = new HashMap<String,String>();
-		params.put(LRS_Param.profileId.name(), profileID);
 		params.put(LRS_Param.activityId.name(), activityID);
+		if(profileID != null) params.put(LRS_Param.profileId.name(), profileID);
 		if(since != null) params.put("since", since.toDateString());
 
 		String queryString = "?";
@@ -300,7 +301,7 @@ public class jxLRS extends ServENT implements LRS {
 		int status = response.getStatus();
 
 		if (status == 200) {
-			return response.getContent();
+			return response;
 		}
 		else if (status == 404) {
 			return null;
@@ -328,6 +329,44 @@ public class jxLRS extends ServENT implements LRS {
 	public UUID saveStatement(Statement statement) throws Exception {
 		rlrs.saveStatement(statement);
 		return statement.getId();
+	}
+	
+	public void saveActivityProfile(String activityID, String profileID, String jsonVal) throws Exception {
+		HashMap<String,String> params = new HashMap<String,String>();
+		params.put(LRS_Param.activityId.name(), activityID);
+		if(profileID != null) params.put(LRS_Param.profileId.name(), profileID);
+
+		String queryString = "?";
+		Boolean first = true;
+		for(Map.Entry<String,String> parameter : params.entrySet()) {
+			queryString += (first ? "" : "&") + URLEncoder.encode(parameter.getKey(), "UTF-8") + "=" + URLEncoder.encode(parameter.getValue(), "UTF-8").replace("+", "%20");
+			first = false;
+		}
+		String apiString;
+		if(profileID == null) apiString = "activities";
+		else apiString = "activities/profile";
+		
+		//Get the current entity ETag
+		HTTPResponse respCurrent = retrieveActivityProfile(activityID,profileID,null);
+		String eTag = respCurrent.getHeader("ETag");
+
+		HTTPRequest request = new HTTPRequest();
+        request.setMethod(HttpMethods.PUT);
+        request.addRequestHeader("If-Match", eTag);
+		URL endPoint = rlrs.getEndpoint();
+		request.setURL(endPoint + apiString + queryString);
+		request.setRequestContent(new ByteArrayBuffer(jsonVal));
+
+		HTTPResponse response = rlrs.sendRequest(request);
+		int status = response.getStatus();
+
+		if (status == 204) {
+			//expected result
+			//do nada
+		}
+		//return status of 409 means you didn't provide a valid ETag
+		else throw new UnexpectedHTTPResponse(response);
+		return;
 	}
 
 	@Override
@@ -372,23 +411,41 @@ public class jxLRS extends ServENT implements LRS {
 		private void queryStatementsHdlr(HttpServletRequest request, HttpServletResponse response) throws Exception {
 			StatementsQuery query = new StatementsQuery();
 			//TODO finish this 
-			String timeFrom = (String) request.getAttribute(LRS_Param.timeFrom.name());
-			query.setSince(new DateTime(timeFrom));
-			//query.setSince(new DateTime("2013-03-13T14:17:42.610Z"));
-			//query.setLimit(3);
-			query.setAgent(mockAgent());
-			query.setActivityID(mockActivity("testSaveStatement").getId());
+			Enumeration<String> keys = request.getAttributeNames();
+			ObjectMapper mapper = new ObjectMapper();
+			//Agent
+			String reqAgent = (String) request.getAttribute("agent");	
+			if(reqAgent != null){
+				JsonNode agent = mapper.readTree(reqAgent);
+				query.setAgent(new Agent().fromJson(agent));
+			}
+			//Activity
+			String activityID = (String) request.getAttribute("activityId");
+			if(activityID != null){
+				URI uri = new URI(activityID);
+				query.setActivityID(uri);
+			}
+			String since = (String) request.getAttribute("since");
+	        if(since != null) query.setSince(new DateTime(since));
+	        query.setLimit(10);
+
 			StatementsResult result = rlrs.queryStatements(query);
 			log.info(result.toJSON(true));
+			ajaxResponse(result.toJSON(),response);
 		}
 
 		private void retrieveStatementHdlr(HttpServletRequest request, HttpServletResponse response)
 				throws JsonProcessingException, IOException, URISyntaxException, Exception {
 			String statementID = (String)request.getAttribute(LRS_Param.statementId.name());
+			if(statementID == null){
+				queryStatementsHdlr(request,response);
+				return;
+			}
 			//TODO: Check id to make sure it is a valid UUID;
 			Statement stat = retrieveStatement(statementID);
 			ajaxResponse(stat.toJSON(), response);
 		}
+		
 
 		private void retrieveVoidedHdlr(HttpServletRequest request, HttpServletResponse response) throws Exception {
 			String statementID = (String) request.getAttribute(LRS_Param.statementId.name());
@@ -485,8 +542,14 @@ public class jxLRS extends ServENT implements LRS {
 
 
 
-		private void saveActivityProfileHdlr(HttpServletRequest request, HttpServletResponse response) {
-			// TODO Auto-generated method stub
+		private void saveActivityProfileHdlr(HttpServletRequest request, HttpServletResponse response) throws JsonProcessingException, IOException, URISyntaxException, Exception {
+			Activity act = activityFromRequest(request);
+			String profileID = (String)request.getAttribute(LRS_Param.profileId.name());
+			String id = act.getId().toString();
+			JsonNode jsPut = putToJSON(request);
+			String jsonVal = jsPut.toString();
+			saveActivityProfile(id,profileID,jsonVal);
+			ajaxResponse("{'good':'job'}",response);
 
 		}
 
@@ -494,10 +557,10 @@ public class jxLRS extends ServENT implements LRS {
 			Activity act = activityFromRequest(request);
 			String profileID = (String)request.getAttribute(LRS_Param.profileId.name());
 			String id = act.getId().toString();
-			UUID registration = null;  //TODO fixme
-			Agent agent = mockAgent(); //TODO fixme
-			String profileContent = retrieveActivityProfile(id,profileID,null);
-			if(profileContent == null) profileContent = "no content";
+			//String profileContent = retrieveActivityProfile(id,profileID,null);
+			HTTPResponse resp = retrieveActivityProfile(id,profileID,null);
+			String profileContent = resp.getContent();
+			if(profileContent == null) profileContent = "[]";
 			ajaxResponse(profileContent,response);
 
 		}

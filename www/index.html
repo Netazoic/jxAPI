@@ -1,0 +1,227 @@
+<html>
+<head>
+<style type="text/css">
+#divMain{width:800px;}
+#divTop{width:100%;display:block:margin:auto;float:left;clear:left;}
+#divProtos{width:100%;display:block:margin:auto;float:left;clear:left;}
+.jxlogo {
+	float: right;
+	margin-left: 20px;
+}
+
+.clear {
+	clear: both;
+}
+
+h2 {
+	margin: 10px 0;
+}
+
+#topLinks a {
+	font-size: 0.7em;
+}
+
+a,a:visited {
+	color: #39648F;
+	text-decoration: none;
+}
+
+a:hover,a:focus {
+	color: #754737;
+	text-decoration: none;
+}
+
+.prototypeDiv {
+	margin: 25px 0;
+}
+
+input[type="text"],input[type="password"],input[type="email"] {
+	display: inline;
+}
+
+li {
+	margin: 0 0 2px 5px;
+	list-style: disc inside none;
+}
+
+.configInfo {
+	diplay: none;
+}
+
+.configInfo .info {
+	font-size: .9em;
+}
+
+.configInfo .settings {
+	margin-left: 15px;
+}
+
+.configInfo .settings span {
+	font-weight: bold;
+}
+
+.configInfo .settings .label {
+	text-align: left;
+	padding: 0 10px;
+}
+
+.infoDiv {
+	border: 1px dotted;
+	padding: 5px;
+}
+
+.rounded {
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+}
+
+.warning {
+	font-weight: bold;
+	color: red;
+}
+
+.cssButton {
+	background-color: black;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	border: 1px solid #39648f;
+	display: inline-block;
+	color: #ffffff;
+	font: "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 16px;
+	font-weight: bold;
+	padding: 6px 24px;
+	text-decoration: none;
+}
+
+.cssButton:visited {
+	background-color: #39648f;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	border: 1px solid #39648f;
+	display: inline-block;
+	color: #ffffff;
+	font: "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 16px;
+	font-weight: bold;
+	padding: 6px 24px;
+	text-decoration: none;
+}
+
+.cssButton:hover {
+	background-color: #729fcc;
+	color: #ffffff;
+}
+
+.cssButton:active {
+	position: relative;
+	top: 1px;
+}
+</style>
+
+</head>
+<body>
+	<div id="divMain">
+		<div id="divTop">
+			<img class="jxLogo" src="/images/jxAPI.png" title="jxAPI - Java xAPI">
+			<h1>jxAPI: A Java instantiation of the Experience API (xAPI)</h1>
+			<p>Based on TinCanJava by Rustici Software: <a href="https://github.com/jomofrodo/TinCanJava">TinCanJava</a>
+			<p>Experience API: <a href="http://www.adlnet.gov/tla/experience-api/">ADL</a>
+
+		</div>
+
+		<div id="divProtos">
+
+			<div class='prototypeDiv'>
+
+				<h2>Js Tetris</h2>
+
+
+				<ul>
+					<li>Sample application to generate xAPI attempted/completed data</li>
+				</ul>
+				<br /> <a id="jsExampleLaunch" href="" target="_blank"
+					baseref="/proto/JsTetris_TCAPI/tetris.html?" class="cssButton">Launch
+					Js Tetris</a> <br/><br/> 
+				<hr />
+			</div>
+			<div class='prototypeDiv'>
+					<h2 class="">Statement Viewer</h2>
+					
+						<a target="_blank" href="/proto/StatementViewer/index.html" class="cssButton">Statement Viewer</a>
+					</br>
+					</br>
+					<hr/>
+				</div>
+			
+			<div class='prototypeDiv'>
+					<h2 class="">All prototypes</h2>
+					
+						<a target="_blank" href="/proto/index.html" class="cssButton">Rustici TinCan Prototypes</a>
+					</br>
+					</br>
+					<hr/>
+				</div>
+			
+			
+			
+		</div>
+		
+	</div>
+
+<script src="./proto/config.js"></script>
+<script src="/proto/scripts/jquery-1.6.2.min.js"></script>
+<script src="/proto/scripts/base64.js"></script>
+
+<script type="text/javascript">
+	$(document)
+			.ready(
+					function() {
+
+						var PROTOTYPE_SHOW_CONFIG_INFO = true;
+						var PROTOTYPE_DEFAULT_NAME = Config.actor.name[0];
+						var PROTOTYPE_DEFAULT_MBOX = Config.actor.mbox[0];
+						var PROTOTYPE_ENDPOINT = Config.endpoint;
+						var PROTOTYPE_AUTH = 'Basic '
+								+ Base64.encode(Config.authUser + ':'
+										+ Config.authPassword);
+
+						$('#jsExampleLaunch')
+								.click(
+										function() {
+											var actor = Config.actor;
+											var em = actor.mbox[0];
+											var mbox = (em.indexOf('mailto:') == 0) ? em
+													: 'mailto:' + em;
+											actor.mbox = [ mbox ];
+
+											$(this)
+													.attr(
+															'href',
+															$(this).attr(
+																	'baseref')
+																	+ "endpoint="
+																	+ encodeURIComponent(PROTOTYPE_ENDPOINT)
+																	+ "&auth="
+																	+ encodeURIComponent(PROTOTYPE_AUTH)
+																	+ "&actor="
+																	+ encodeURIComponent(JSON
+																			.stringify(actor)));
+											return true;
+										});
+
+						if (PROTOTYPE_SHOW_CONFIG_INFO) {
+							$('.configInfo').show();
+							$('#defEndpoint').text(PROTOTYPE_ENDPOINT);
+							$('#defAuth').text(PROTOTYPE_AUTH);
+							$('#defActorName').text(PROTOTYPE_DEFAULT_NAME);
+							$('#defActorMbox').text(PROTOTYPE_DEFAULT_MBOX);
+						}
+
+					});
+</script>
+</body>
+</html>
