@@ -7,3 +7,5 @@ WEB-INF/classes
 www/WEB-INF/classes
 .metadata
 .settings
+www/WEB-INF/web.xml
+web.local.xml

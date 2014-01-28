@@ -72,4 +72,10 @@ public class jxAPI {
 		}
 	}
 
+	public enum TC_Param{
+		statementId, LRS_Endpoint, LRS_Username, LRS_Password, 
+		object, actor, verb, timeFrom, activityId, profileId,
+		limit, since, agent, until, related_activities, related_agents
+	}
+
 }

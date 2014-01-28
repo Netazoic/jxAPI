@@ -1,3 +1,16 @@
+	<!--  DB  -->
+	<context-param>
+		<param-name>jndiDB</param-name>
+		<param-value>jdbc/jxapidev</param-value>
+		<!--  Define a resource in the tomcat server.xml file
+			e.g.,
+				<Resource name="jdbc/jxapidev" auth="Container" type="javax.sql.DataSource"
+				driverClassName="org.postgresql.Driver" url="jdbc:postgresql://127.0.0.1:5432/jxapidev"
+				username="jxapi" password="foo1foo" maxActive="20" maxIdle="10"
+				maxWait="-1" />
+		
+		 -->
+	</context-param>
 	<!-- LRS Endpoint params -->
 	<context-param>
 		<param-name>LRS_Endpoint</param-name>
@@ -9,7 +22,7 @@
 	</context-param>
 	<context-param>
 		<param-name>LRS_Password</param-name>
-		<param-value>dogs2bark</param-value>
+		<param-value>foo1foo</param-value>
 	</context-param> 
 	<!--   Local Endpoint
 	<context-param>
@@ -37,6 +50,6 @@
 	</context-param>
 	<context-param>
 		<param-name>LRS_Password</param-name>
-		<param-value>dogs2bark</param-value>
+		<param-value>foo1foo</param-value>
 	</context-param> 
 	-->
