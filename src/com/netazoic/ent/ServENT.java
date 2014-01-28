@@ -1,6 +1,8 @@
 package com.netazoic.ent;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Enumeration;
@@ -19,6 +21,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /*
  * References:
  * http://www.javaranch.com/journal/200601/JDBCConnectionPooling.html
@@ -29,11 +35,11 @@ import javax.sql.DataSource;
 public class ServENT extends HttpServlet {
 	public Map<String, NetAction> actionMap;
 	public String defaultAction;
-	private DataSource dataSource;
-	
+	private DataSource dataSource = null;
+
 	public enum ENT_Param{
-		netAction, actionString, Settings;
-		
+		netAction, actionString, Settings, jndiDB;
+
 	}
 
 
@@ -46,6 +52,7 @@ public class ServENT extends HttpServlet {
 		// Authenticator, and anything else we need here.
 		context = config.getServletContext();
 		actionMap = new HashMap<String,NetAction>();
+		String jndiDB = null;
 		synchronized (context) {
 			settings = getSettings();
 			if (settings == null) {
@@ -60,15 +67,22 @@ public class ServENT extends HttpServlet {
 				putSettings(settings);
 			}
 			try {
-				// Look up the JNDI data source only once at init time
-				InitialContext cxt = new InitialContext();
-				dataSource = (DataSource) cxt.lookup( "java:/comp/env/jdbc/postgres" );
-				if ( dataSource == null ) {
-					throw new ServletException("Data source not found!");
+				//JNDI data connector
+				jndiDB = context.getInitParameter(ENT_Param.jndiDB.name());
+				//if present, should be a string in the form "jdbc/<dbname>"
+				// default
+				//if(jndiDB == null) jndiDB = "postgres";
+				if(jndiDB != null){
+					// Look up the JNDI data source only once at init time
+					InitialContext cxt = new InitialContext();
+					dataSource = (DataSource) cxt.lookup( "java:/comp/env/" + jndiDB );
+					if ( dataSource == null ) {
+						throw new ServletException("Data source not found!");
+					}
 				}
 			} catch (NamingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//specified dbName not found in the tomcat server.xml file
+				log("DBName not found in server.xml: " + jndiDB);
 			}
 
 		}
@@ -94,6 +108,13 @@ public class ServENT extends HttpServlet {
 		}
 	}
 
+	public void ajaxResponse(String json, HttpServletResponse response)
+			throws IOException {
+		response.setContentType("text/xml");
+		response.setHeader("Cache-Control", "no-cache");
+		response.getWriter().write(json);
+	}
+	
 	public NetAction determineAction(HttpServletRequest request) {
 		String actionString = determineActionString(request);
 
@@ -106,6 +127,8 @@ public class ServENT extends HttpServlet {
 
 	public String determineActionString(HttpServletRequest request) {
 		String url = request.getRequestURI();
+		//TODO make smarter to handle multi-segmented actions like action/sub-action
+		
 		//Action is the last part of the uri, after the last "/" and before any query
 		// string or # locator
 		Integer idxQ=0,idxP=0,idxE;
@@ -113,7 +136,7 @@ public class ServENT extends HttpServlet {
 		if(url.matches("#")) idxP = url.indexOf('#');
 		idxE = idxQ>0?idxQ:idxP>0?idxP:url.length();
 		String actionString = url.substring(url.lastIndexOf('/')+1,idxE);
-		
+
 		if(actionString != null){
 			request.setAttribute(ENT_Param.actionString.name(), actionString);
 		}
@@ -153,6 +176,7 @@ public class ServENT extends HttpServlet {
 	}
 
 	public Connection getConnection() throws SQLException {
+		if(dataSource == null) return null;
 		return dataSource.getConnection();
 	}
 
@@ -167,7 +191,20 @@ public class ServENT extends HttpServlet {
 		getServletContext().setAttribute(ENT_Param.Settings.name(), settings);
 	}
 	
-	public abstract class ActionEO implements NetAction {
+	public static JsonNode putToJSON(HttpServletRequest req) throws JsonProcessingException, IOException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(req.getInputStream()));
+		StringBuilder sb = new StringBuilder();
+		String line;
+		while ((line = br.readLine()) != null) {
+			sb.append(line);
+		}
+		String data = br.readLine();
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode obj = mapper.readTree(sb.toString());
+		return obj;
+	}
+
+	public abstract class ActionWithConnectionEO implements NetAction {
 
 		public abstract void action(HttpServletRequest request, HttpServletResponse response) throws IOException, Exception;
 

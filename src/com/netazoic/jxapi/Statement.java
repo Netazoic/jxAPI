@@ -1,16 +1,8 @@
 package com.netazoic.jxapi;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.UUID;
 
-import javax.servlet.http.HttpServletRequest;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.netazoic.jxapi.jxLRS.LRS_Param;
-import com.netazoic.jxapi.iface.IF_Actor;
 import com.netazoic.jxapi.iface.IF_Object;
 
 /*

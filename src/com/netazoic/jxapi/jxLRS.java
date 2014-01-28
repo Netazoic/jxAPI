@@ -1,14 +1,10 @@
 package com.netazoic.jxapi;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,6 +33,7 @@ import com.netazoic.ent.ServENT;
 import com.netazoic.jxapi.Object.OBJ_Type;
 import com.netazoic.jxapi.jxAPI.HTTP_Method;
 import com.netazoic.jxapi.jxAPI.JX_Action;
+import com.netazoic.jxapi.jxAPI.TC_Param;
 import com.netazoic.jxapi.jxAPI.X_API;
 import com.rusticisoftware.tincan.Agent;
 import com.rusticisoftware.tincan.LRS;
@@ -62,10 +59,6 @@ public class jxLRS extends ServENT implements LRS {
 
 	RemoteLRS rlrs;
 
-	public enum LRS_Param{
-		statementId, LRS_Endpoint, LRS_Username, LRS_Password, 
-		object, actor, verb, timeFrom, activityId, profileId
-	}
 	StatementHandler sttmntHdlr = new StatementHandler();
 	StateHandler stateHdlr = new StateHandler();
 	ActivityProfileHandler activityHdlr = new ActivityProfileHandler();
@@ -107,18 +100,14 @@ public class jxLRS extends ServENT implements LRS {
 		NetAction action = (NetAction)actionMap.get(jxAction.actionString);
 		if(action==null) action = (NetAction)actionMap.get(defaultAction);
 		if (action!=null){
-			Connection con = null;
 			try{
-				con = getConnection();
-				//Do stuff here
 				action.doAction(request, response, session);
 			} 
 			catch (Exception ex) {
 				throw new ServletException(ex);
 			}
 			finally {
-				if (con != null) 
-					try {con.close();} catch (SQLException e) {}
+				//close things here
 			}
 		}
 
@@ -128,12 +117,7 @@ public class jxLRS extends ServENT implements LRS {
 		}
 	}
 
-	private void ajaxResponse(String json, HttpServletResponse response)
-			throws IOException {
-		response.setContentType("text/xml");
-		response.setHeader("Cache-Control", "no-cache");
-		response.getWriter().write(json);
-	}
+
 
 	public JX_Action geNetAction(HttpServletRequest request) {
 		String uri = request.getRequestURI();
@@ -189,10 +173,10 @@ public class jxLRS extends ServENT implements LRS {
 	private RemoteLRS getRemoteLRS(TCAPIVersion version) throws Exception {
 		RemoteLRS obj = new RemoteLRS();
 		if(version == null) version = TCAPIVersion.V100;
-		obj.setEndpoint(getSetting(LRS_Param.LRS_Endpoint.name()));
+		obj.setEndpoint(getSetting(TC_Param.LRS_Endpoint.name()));
 		obj.setVersion(version);
-		obj.setUsername(getSetting(LRS_Param.LRS_Username.name()));
-		obj.setPassword(getSetting(LRS_Param.LRS_Password.name()));
+		obj.setUsername(getSetting(TC_Param.LRS_Username.name()));
+		obj.setPassword(getSetting(TC_Param.LRS_Password.name()));
 
 		return obj;
 	}
@@ -231,11 +215,11 @@ public class jxLRS extends ServENT implements LRS {
 	}
 
 	private Activity mockActivity(String suffix) throws URISyntaxException {
-		return new Activity("http://tincanapi.com/TinCanJava/Test/RemoteLRSTest_mockActivity/" + suffix);
+		return new Activity("http://jxapi.netazoic.com/Test/RemoteLRSTest_mockActivity/" + suffix);
 	}
 	private Agent mockAgent() {
 		Agent obj = new Agent();
-		obj.setMbox("mailto:tincanjava-test-tincan@tincanapi.com");
+		obj.setMbox("mailto:jxapi-test@jxapi.netazoic.com");
 
 		return obj;
 	}
@@ -258,19 +242,6 @@ public class jxLRS extends ServENT implements LRS {
 		return rlrs.moreStatements(moreURL);
 	}
 
-	public static JsonNode putToJSON(HttpServletRequest req) throws JsonProcessingException, IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(req.getInputStream()));
-		StringBuilder sb = new StringBuilder();
-		String line;
-		while ((line = br.readLine()) != null) {
-			sb.append(line);
-		}
-		String data = br.readLine();
-		ObjectMapper mapper = new ObjectMapper();
-		JsonNode obj = mapper.readTree(sb.toString());
-		return obj;
-	}
-
 	@Override
 	public StatementsResult queryStatements(StatementsQueryInterface query)
 			throws Exception {
@@ -279,8 +250,8 @@ public class jxLRS extends ServENT implements LRS {
 
 	public HTTPResponse retrieveActivityProfile(String activityID, String profileID, TimeStamp since) throws Exception {
 		HashMap<String,String> params = new HashMap<String,String>();
-		params.put(LRS_Param.activityId.name(), activityID);
-		if(profileID != null) params.put(LRS_Param.profileId.name(), profileID);
+		params.put(TC_Param.activityId.name(), activityID);
+		if(profileID != null) params.put(TC_Param.profileId.name(), profileID);
 		if(since != null) params.put("since", since.toDateString());
 
 		String queryString = "?";
@@ -325,17 +296,11 @@ public class jxLRS extends ServENT implements LRS {
 		return rlrs.retrieveVoidedStatement(id);
 	}
 
-	@Override
-	public UUID saveStatement(Statement statement) throws Exception {
-		rlrs.saveStatement(statement);
-		return statement.getId();
-	}
-	
 	public void saveActivityProfile(String activityID, String profileID, String jsonVal) throws Exception {
 		HashMap<String,String> params = new HashMap<String,String>();
-		params.put(LRS_Param.activityId.name(), activityID);
-		if(profileID != null) params.put(LRS_Param.profileId.name(), profileID);
-
+		params.put(TC_Param.activityId.name(), activityID);
+		if(profileID != null) params.put(TC_Param.profileId.name(), profileID);
+	
 		String queryString = "?";
 		Boolean first = true;
 		for(Map.Entry<String,String> parameter : params.entrySet()) {
@@ -349,17 +314,17 @@ public class jxLRS extends ServENT implements LRS {
 		//Get the current entity ETag
 		HTTPResponse respCurrent = retrieveActivityProfile(activityID,profileID,null);
 		String eTag = respCurrent.getHeader("ETag");
-
+	
 		HTTPRequest request = new HTTPRequest();
-        request.setMethod(HttpMethods.PUT);
-        request.addRequestHeader("If-Match", eTag);
+	    request.setMethod(HttpMethods.PUT);
+	    request.addRequestHeader("If-Match", eTag);
 		URL endPoint = rlrs.getEndpoint();
 		request.setURL(endPoint + apiString + queryString);
 		request.setRequestContent(new ByteArrayBuffer(jsonVal));
-
+	
 		HTTPResponse response = rlrs.sendRequest(request);
 		int status = response.getStatus();
-
+	
 		if (status == 204) {
 			//expected result
 			//do nada
@@ -370,19 +335,25 @@ public class jxLRS extends ServENT implements LRS {
 	}
 
 	@Override
+	public void saveState(State state, String activityId, Agent agent,
+			UUID registration) throws Exception {
+		rlrs.saveState(state, activityId, agent, registration);
+	
+	}
+
+	@Override
+	public UUID saveStatement(Statement statement) throws Exception {
+		rlrs.saveStatement(statement);
+		return statement.getId();
+	}
+	
+	@Override
 	public List<String> saveStatements(List<Statement> statements)
 			throws Exception {
 		return rlrs.saveStatements(statements);
 	}
 
-	@Override
-	public void saveState(State state, String activityId, Agent agent,
-			UUID registration) throws Exception {
-		rlrs.saveState(state, activityId, agent, registration);
-
-	}
-
-	public class StatementHandler extends ActionEO implements NetAction {
+	public class StatementHandler extends ActionWithConnectionEO implements NetAction {
 
 		public void action(HttpServletRequest request, HttpServletResponse response) throws Exception{
 			String actionString = (String) request.getAttribute(ENT_Param.actionString.name());
@@ -414,29 +385,33 @@ public class jxLRS extends ServENT implements LRS {
 			Enumeration<String> keys = request.getAttributeNames();
 			ObjectMapper mapper = new ObjectMapper();
 			//Agent
-			String reqAgent = (String) request.getAttribute("agent");	
-			if(reqAgent != null){
-				JsonNode agent = mapper.readTree(reqAgent);
-				query.setAgent(new Agent().fromJson(agent));
-			}
-			//Activity
-			String activityID = (String) request.getAttribute("activityId");
-			if(activityID != null){
-				URI uri = new URI(activityID);
-				query.setActivityID(uri);
-			}
-			String since = (String) request.getAttribute("since");
+			String agent = (String) request.getAttribute(TC_Param.agent.name());	
+			if(agent != null)query.setAgent(new Agent().fromJson(mapper.readTree(agent)));
+	        String verbID = (String) request.getAttribute(TC_Param.verb.name());
+	        if(verbID !=  null) query.setVerbID(verbID);
+			String activityID = (String) request.getAttribute(TC_Param.activityId.name());
+			if(activityID != null) query.setActivityID(new URI(activityID));		
+			String since = (String) request.getAttribute(TC_Param.since.name());
 	        if(since != null) query.setSince(new DateTime(since));
-	        query.setLimit(10);
+			String until = (String) request.getAttribute(TC_Param.until.name());
+	        if(until != null) query.setUntil(new DateTime(until));
+	        String limit = (String) request.getAttribute(TC_Param.limit.name());
+	        if(limit != null) query.setLimit(Integer.parseInt(limit));
+	        //String registration = (String) request.getAttribute(TC_Param.registration.name());
+	        //if(registration != null) query.setRegistration(new UUID(Long.parseLong(registration)));
+
+	        query.setRelatedActivities(Boolean.parseBoolean((String)request.getAttribute(TC_Param.related_activities.name())));
+	        query.setRelatedAgents(Boolean.parseBoolean((String)request.getAttribute(TC_Param.related_agents.name())));
+	
 
 			StatementsResult result = rlrs.queryStatements(query);
-			log.info(result.toJSON(true));
+			//log.info(result.toJSON(true));
 			ajaxResponse(result.toJSON(),response);
 		}
 
 		private void retrieveStatementHdlr(HttpServletRequest request, HttpServletResponse response)
 				throws JsonProcessingException, IOException, URISyntaxException, Exception {
-			String statementID = (String)request.getAttribute(LRS_Param.statementId.name());
+			String statementID = (String)request.getAttribute(TC_Param.statementId.name());
 			if(statementID == null){
 				queryStatementsHdlr(request,response);
 				return;
@@ -448,7 +423,7 @@ public class jxLRS extends ServENT implements LRS {
 		
 
 		private void retrieveVoidedHdlr(HttpServletRequest request, HttpServletResponse response) throws Exception {
-			String statementID = (String) request.getAttribute(LRS_Param.statementId.name());
+			String statementID = (String) request.getAttribute(TC_Param.statementId.name());
 			Statement st = retrieveStatement(statementID);
 			ajaxResponse(st.toJSON(),response);
 		}
@@ -464,13 +439,13 @@ public class jxLRS extends ServENT implements LRS {
 		private Statement statementFromRequest(HttpServletRequest request)
 				throws JsonProcessingException, IOException,
 				URISyntaxException, Exception {
-			String statementID = (String)request.getAttribute(LRS_Param.statementId.name());
+			String statementID = (String)request.getAttribute(TC_Param.statementId.name());
 			//TODO: Check id to make sure it is a valid UUID;
 			JsonNode jsPut = putToJSON(request);
 			Statement st = new Statement(jsPut);
-			JsonNode object = jsPut.get(LRS_Param.object.name());
-			st.setActor(getAgent(jsPut.get(LRS_Param.actor.name())));
-			st.setVerb(getVerb(jsPut.get(LRS_Param.verb.name())));
+			JsonNode object = jsPut.get(TC_Param.object.name());
+			st.setActor(getAgent(jsPut.get(TC_Param.actor.name())));
+			st.setVerb(getVerb(jsPut.get(TC_Param.verb.name())));
 			st.setObject(getXObject(object));
 			return st;
 		}
@@ -478,7 +453,7 @@ public class jxLRS extends ServENT implements LRS {
 	}
 
 
-	public class StateHandler extends ActionEO implements NetAction {
+	public class StateHandler extends ActionWithConnectionEO implements NetAction {
 
 		public void action(HttpServletRequest request, HttpServletResponse response) throws Exception{
 			String actionString = (String) request.getAttribute(ENT_Param.actionString.name());
@@ -515,7 +490,7 @@ public class jxLRS extends ServENT implements LRS {
 	}
 
 
-	public class ActivityProfileHandler extends ActionEO implements NetAction {
+	public class ActivityProfileHandler extends ActionWithConnectionEO implements NetAction {
 
 		public void action(HttpServletRequest request, HttpServletResponse response) throws Exception{
 			String actionString = (String) request.getAttribute(ENT_Param.actionString.name());
@@ -535,7 +510,7 @@ public class jxLRS extends ServENT implements LRS {
 		private Activity activityFromRequest(HttpServletRequest request)
 				throws JsonProcessingException, IOException,
 				URISyntaxException, Exception {
-			String activityID = (String)request.getAttribute(LRS_Param.activityId.name());
+			String activityID = (String)request.getAttribute(TC_Param.activityId.name());
 			Activity act = new Activity(activityID);
 			return act;
 		}
@@ -544,7 +519,7 @@ public class jxLRS extends ServENT implements LRS {
 
 		private void saveActivityProfileHdlr(HttpServletRequest request, HttpServletResponse response) throws JsonProcessingException, IOException, URISyntaxException, Exception {
 			Activity act = activityFromRequest(request);
-			String profileID = (String)request.getAttribute(LRS_Param.profileId.name());
+			String profileID = (String)request.getAttribute(TC_Param.profileId.name());
 			String id = act.getId().toString();
 			JsonNode jsPut = putToJSON(request);
 			String jsonVal = jsPut.toString();
@@ -555,7 +530,7 @@ public class jxLRS extends ServENT implements LRS {
 
 		private void retrieveActivityProfileHdlr(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException, Exception {
 			Activity act = activityFromRequest(request);
-			String profileID = (String)request.getAttribute(LRS_Param.profileId.name());
+			String profileID = (String)request.getAttribute(TC_Param.profileId.name());
 			String id = act.getId().toString();
 			//String profileContent = retrieveActivityProfile(id,profileID,null);
 			HTTPResponse resp = retrieveActivityProfile(id,profileID,null);
@@ -567,7 +542,7 @@ public class jxLRS extends ServENT implements LRS {
 	}
 
 
-	public class AgentProfileHandler extends ActionEO implements NetAction {
+	public class AgentProfileHandler extends ActionWithConnectionEO implements NetAction {
 
 		public void action(HttpServletRequest request, HttpServletResponse response) throws Exception{
 			String actionString = (String) request.getAttribute(ENT_Param.actionString.name());
@@ -587,14 +562,14 @@ public class jxLRS extends ServENT implements LRS {
 		private Agent agentFromRequest(HttpServletRequest request)
 				throws JsonProcessingException, IOException,
 				URISyntaxException, Exception {
-			String statementID = (String)request.getAttribute(LRS_Param.statementId.name());
+			String statementID = (String)request.getAttribute(TC_Param.statementId.name());
 			//TODO: Check id to make sure it is a valid UUID;
 			JsonNode jsPut = putToJSON(request);
 			Statement st = new Statement(jsPut);
 			Agent agent = new Agent();
-			JsonNode object = jsPut.get(LRS_Param.object.name());
-			st.setActor(getAgent(jsPut.get(LRS_Param.actor.name())));
-			st.setVerb(getVerb(jsPut.get(LRS_Param.verb.name())));
+			JsonNode object = jsPut.get(TC_Param.object.name());
+			st.setActor(getAgent(jsPut.get(TC_Param.actor.name())));
+			st.setVerb(getVerb(jsPut.get(TC_Param.verb.name())));
 			st.setObject(getXObject(object));
 			return agent;
 		}
